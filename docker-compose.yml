@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend/FinTrack.Api
+    container_name: fintrack-backend
+    volumes:
+      - fintrack-data:/data
+    expose:
+      - "8080"
+    ports:
+      - "5099:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: fintrack-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  fintrack-data:
