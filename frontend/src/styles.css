@@ -171,7 +171,7 @@ h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
 .btn.small {
-  height: 32px;
+  height: 36px;
   padding: 0 14px;
   font-size: 13px;
   border-radius: 10px;
@@ -183,7 +183,7 @@ h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px
 .btn.success { background: linear-gradient(135deg, #35e0a1, #22c58a); color: #062a1d; box-shadow: 0 10px 30px -12px rgba(53, 224, 161, 0.55); }
 .btn.ghost { background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); box-shadow: none; }
 .btn.ghost:hover { border-color: var(--accent); filter: none; }
-.btn.small.icon-only { width: 32px; padding: 0; line-height: 0; }
+.btn.small.icon-only { width: 36px; padding: 0; line-height: 0; }
 
 /* ---------- Summary strip ---------- */
 .summary-strip { display: flex; gap: 18px; margin-bottom: 26px; flex-wrap: wrap; }
@@ -344,31 +344,40 @@ table.payments th {
 table.payments th.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.15s; }
 table.payments th.sortable:hover { color: var(--text); }
 .sort-arrow { display: inline-block; width: 12px; margin-left: 2px; font-size: 10px; color: var(--accent); }
-table.payments td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.payments td { padding: 6px 7px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.payments tbody tr:last-child td { border-bottom: none; }
 table.payments tr { transition: background 0.12s; }
-table.payments tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
-table.payments tr.dirty td { background: rgba(124, 108, 255, 0.1); }
+table.payments tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+/* Edited row: subtle left accent instead of a full tint so it reads cleanly. */
+table.payments tr.dirty td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 table.payments tfoot td { padding-top: 14px; border-top: 2px solid var(--border); border-bottom: none; font-weight: 800; }
 table.payments tfoot .right { color: var(--pos); font-variant-numeric: tabular-nums; }
 
-table.payments input,
+table.payments input:not([type="checkbox"]),
 table.payments select {
   width: 100%;
   min-width: 0;
+  height: 36px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 9px 11px;
+  padding: 0 11px;
   border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-table.payments input:focus,
+table.payments input:not([type="checkbox"]):focus,
 table.payments select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(124, 108, 255, 0.22);
+}
+table.payments input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 .w-sm { max-width: 130px; }
 .w-xs { max-width: 72px; }
