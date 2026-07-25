@@ -1,7 +1,6 @@
 services:
   backend:
-    build:
-      context: ./backend/FinTrack.Api
+    image: ghcr.io/egemenyildiz3/fintrack-backend:latest
     container_name: fintrack-backend
     volumes:
       - fintrack-data:/data
@@ -12,8 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: ./frontend
+    image: ghcr.io/egemenyildiz3/fintrack-frontend:latest
     container_name: fintrack-frontend
     depends_on:
       - backend
