@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddHostedService<AutoReceiveService>();
+builder.Services.AddHostedService<MonthlyBackupService>();
 
 var dbPath = builder.Configuration["DB_PATH"] ?? "fintrack.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
