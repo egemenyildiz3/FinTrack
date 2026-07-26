@@ -3,11 +3,14 @@ services:
     build:
       context: ./backend/FinTrack.Api
     container_name: fintrack-backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - EXTRA_BACKUP_PATH=${EXTRA_BACKUP_PATH:-}
     volumes:
       - fintrack-data:/data
-      - ${EXTRA_BACKUP_PATH:-/tmp/fintrack-backup-unused}:/mnt/extra-backups
-    environment:
-      - EXTRA_BACKUP_PATH=${EXTRA_BACKUP_PATH:+/mnt/extra-backups}
+      - ${EXTRA_BACKUP_PATH:-/tmp/fintrack-noop}:${EXTRA_BACKUP_PATH:-/tmp/fintrack-noop}
     expose:
       - "8080"
     ports:

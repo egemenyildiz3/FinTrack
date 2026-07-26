@@ -59,7 +59,6 @@ public class MonthlyBackupService : BackgroundService
         var extraDir = _config["EXTRA_BACKUP_PATH"]?.Trim();
         if (string.IsNullOrEmpty(extraDir))
             extraDir = _config["ExtraBackupPath"]?.Trim();
-
         // Collect directories to write to — primary volume is always included.
         var dirs = new List<string> { primaryDir };
         if (!string.IsNullOrEmpty(extraDir))
