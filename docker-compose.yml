@@ -5,8 +5,9 @@ services:
     container_name: fintrack-backend
     volumes:
       - fintrack-data:/data
+      - ${EXTRA_BACKUP_PATH:-/tmp/fintrack-backup-unused}:/mnt/extra-backups
     environment:
-      - EXTRA_BACKUP_PATH=
+      - EXTRA_BACKUP_PATH=${EXTRA_BACKUP_PATH:+/mnt/extra-backups}
     expose:
       - "8080"
     ports:
