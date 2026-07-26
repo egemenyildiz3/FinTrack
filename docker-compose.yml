@@ -1,12 +1,12 @@
 services:
   backend:
-    image: ghcr.io/egemenyildiz3/fintrack-backend:latest
+    build:
+      context: ./backend/FinTrack.Api
     container_name: fintrack-backend
     volumes:
       - fintrack-data:/data
-      - /home/egemen/file-storage/information:/mnt/extra-backups
     environment:
-      - EXTRA_BACKUP_PATH=/mnt/extra-backups
+      - EXTRA_BACKUP_PATH=
     expose:
       - "8080"
     ports:
@@ -14,7 +14,8 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/egemenyildiz3/fintrack-frontend:latest
+    build:
+      context: ./frontend
     container_name: fintrack-frontend
     depends_on:
       - backend

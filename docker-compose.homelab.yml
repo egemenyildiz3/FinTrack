@@ -1,0 +1,11 @@
+# Homelab overlay — apply on top of docker-compose.yml on the server:
+#   docker compose -f docker-compose.yml -f docker-compose.homelab.yml up -d
+#
+# Adds the extra backup mount so monthly backups also land at
+# /home/egemen/file-storage/information on the host.
+services:
+  backend:
+    volumes:
+      - /home/egemen/file-storage/information:/mnt/extra-backups
+    environment:
+      - EXTRA_BACKUP_PATH=/mnt/extra-backups
