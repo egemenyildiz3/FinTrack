@@ -55,11 +55,21 @@ public class MonthlyBackupService : BackgroundService
         var today = DateTime.Now;
         if (today.Day != 1) return; // only on the 1st of the month
 
-        var dir = GetBackupDir();
-        Directory.CreateDirectory(dir);
+        var primaryDir = GetPrimaryBackupDir();
+        var extraDir = _config["EXTRA_BACKUP_PATH"]?.Trim();
+        if (string.IsNullOrEmpty(extraDir))
+            extraDir = _config["ExtraBackupPath"]?.Trim();
 
-        var file = Path.Combine(dir, $"fintrack-backup-{today:yyyy-MM}.json");
-        if (File.Exists(file)) return; // this month is already backed up
+        // Collect directories to write to — primary volume is always included.
+        var dirs = new List<string> { primaryDir };
+        if (!string.IsNullOrEmpty(extraDir))
+            dirs.Add(extraDir);
+
+        var filename = $"fintrack-backup-{today:yyyy-MM}.json";
+
+        // Check primary dir to decide whether to generate the payload at all.
+        Directory.CreateDirectory(primaryDir);
+        if (File.Exists(Path.Combine(primaryDir, filename))) return;
 
         using var scope = _services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -74,14 +84,29 @@ public class MonthlyBackupService : BackgroundService
             Settings = await db.Settings.ToListAsync(),
         };
 
-        await File.WriteAllTextAsync(file, JsonSerializer.Serialize(data, JsonOptions));
-        _logger.LogInformation("Wrote monthly backup: {File}", file);
+        var json = JsonSerializer.Serialize(data, JsonOptions);
 
-        Prune(dir);
+        foreach (var dir in dirs)
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+                var path = Path.Combine(dir, filename);
+                await File.WriteAllTextAsync(path, json);
+                _logger.LogInformation("Wrote monthly backup: {Path}", path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not write backup to {Dir}", dir);
+            }
+        }
+
+        Prune(primaryDir);
+        if (!string.IsNullOrEmpty(extraDir)) Prune(extraDir);
     }
 
-    // Backups live next to the database file (e.g. /data/backups) so they're in the volume.
-    private string GetBackupDir()
+    // Primary backups live next to the database file (e.g. /data/backups) — inside the volume.
+    private string GetPrimaryBackupDir()
     {
         var dbPath = _config["DB_PATH"] ?? "fintrack.db";
         var dbDir = Path.GetDirectoryName(Path.GetFullPath(dbPath)) ?? ".";
