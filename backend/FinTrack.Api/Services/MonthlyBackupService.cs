@@ -52,23 +52,21 @@ public class MonthlyBackupService : BackgroundService
 
     private async Task WriteBackupIfDueAsync()
     {
-        var today = DateTime.Now;
-        if (today.Day != 1) return; // only on the 1st of the month
-
+        var now = DateTime.UtcNow;
         var primaryDir = GetPrimaryBackupDir();
         var extraDir = _config["EXTRA_BACKUP_PATH"]?.Trim();
         if (string.IsNullOrEmpty(extraDir))
             extraDir = _config["ExtraBackupPath"]?.Trim();
-        // Collect directories to write to — primary volume is always included.
+
+        var filename = $"fintrack-backup-{now:yyyy-MM}.json";
+        var primaryPath = Path.Combine(primaryDir, filename);
+
+        Directory.CreateDirectory(primaryDir);
+        if (File.Exists(primaryPath)) return; // already created for this month
+
         var dirs = new List<string> { primaryDir };
         if (!string.IsNullOrEmpty(extraDir))
             dirs.Add(extraDir);
-
-        var filename = $"fintrack-backup-{today:yyyy-MM}.json";
-
-        // Check primary dir to decide whether to generate the payload at all.
-        Directory.CreateDirectory(primaryDir);
-        if (File.Exists(Path.Combine(primaryDir, filename))) return;
 
         using var scope = _services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
