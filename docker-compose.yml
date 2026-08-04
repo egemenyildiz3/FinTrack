@@ -7,10 +7,10 @@ services:
       - path: .env
         required: false
     environment:
-      - EXTRA_BACKUP_PATH=${EXTRA_BACKUP_PATH:-}
+      - EXTRA_BACKUP_PATH=${EXTRA_BACKUP_PATH:-/home/egemen/file-storage/information}
     volumes:
       - fintrack-data:/data
-      - ${EXTRA_BACKUP_PATH:-/tmp/fintrack-noop}:${EXTRA_BACKUP_PATH:-/tmp/fintrack-noop}
+      - ${EXTRA_BACKUP_PATH:-/home/egemen/file-storage/information}:${EXTRA_BACKUP_PATH:-/home/egemen/file-storage/information}
     expose:
       - "8080"
     ports:

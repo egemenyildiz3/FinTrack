@@ -62,7 +62,28 @@ public class MonthlyBackupService : BackgroundService
         var primaryPath = Path.Combine(primaryDir, filename);
 
         Directory.CreateDirectory(primaryDir);
-        if (File.Exists(primaryPath)) return; // already created for this month
+        if (File.Exists(primaryPath))
+        {
+            if (!string.IsNullOrEmpty(extraDir))
+            {
+                var extraPath = Path.Combine(extraDir, filename);
+                if (!File.Exists(extraPath))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(extraDir);
+                        File.Copy(primaryPath, extraPath, overwrite: true);
+                        _logger.LogInformation("Mirrored existing backup to extra destination: {Path}", extraPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not mirror existing backup to {Dir}", extraDir);
+                    }
+                }
+            }
+
+            return; // already created for this month
+        }
 
         var dirs = new List<string> { primaryDir };
         if (!string.IsNullOrEmpty(extraDir))
