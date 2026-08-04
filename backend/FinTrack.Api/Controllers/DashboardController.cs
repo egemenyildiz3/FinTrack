@@ -1,4 +1,5 @@
 using FinTrack.Api.Data;
+using FinTrack.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

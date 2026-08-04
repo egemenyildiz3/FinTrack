@@ -1,6 +1,7 @@
 using System.Globalization;
 using FinTrack.Api.Data;
 using FinTrack.Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Api.Services;
 
@@ -11,6 +12,7 @@ namespace FinTrack.Api.Services;
 public static class IncomeSchedule
 {
     public const string BalanceKey = "TotalOwnedMoney";
+    public const string ReservedMonthKey = "ReservedPaymentsAppliedYearMonth";
 
     /// <summary>The day this income should be received in the given month, or null if manual.</summary>
     public static DateOnly? EffectiveReceiveDate(int year, int month, Salary s) => s.ScheduleType switch
@@ -61,6 +63,35 @@ public static class IncomeSchedule
         return changed;
     }
 
+    public static async Task<bool> ProcessReservedPaymentsAsync(AppDbContext db, DateOnly today)
+    {
+        if (today.Day != 1) return false;
+
+        var ym = today.ToString("yyyy-MM");
+        if (IsReservedPaymentsApplied(db, ym)) return false;
+
+        var enabledBanks = await BankSettings.GetEnabledBanksAsync(db);
+        var monthly = await db.Payments
+            .Where(p => p.Recurrence == "Monthly" && BankSettings.IsEnabled(p.Account, enabledBanks))
+            .ToListAsync();
+
+        var reservedAmount = monthly
+            .Where(p => p.Currency == "EUR")
+            .Sum(p => p.Amount);
+
+        if (reservedAmount == 0)
+        {
+            MarkReservedPaymentsApplied(db, ym);
+            db.SaveChanges();
+            return false;
+        }
+
+        AddToBalance(db, -reservedAmount);
+        MarkReservedPaymentsApplied(db, ym);
+        db.SaveChanges();
+        return true;
+    }
+
     public static decimal GetBalance(AppDbContext db)
     {
         var setting = db.Settings.FirstOrDefault(x => x.Key == BalanceKey);
@@ -84,5 +115,25 @@ public static class IncomeSchedule
         var next = current + amount;
         setting.Value = next.ToString(CultureInfo.InvariantCulture);
         return next;
+    }
+
+    public static bool IsReservedPaymentsApplied(AppDbContext db, string yearMonth)
+    {
+        var setting = db.Settings.FirstOrDefault(x => x.Key == ReservedMonthKey);
+        return setting?.Value == yearMonth;
+    }
+
+    public static void MarkReservedPaymentsApplied(AppDbContext db, string yearMonth)
+    {
+        var setting = db.Settings.FirstOrDefault(x => x.Key == ReservedMonthKey);
+        if (setting is null)
+        {
+            setting = new AppSetting { Key = ReservedMonthKey, Value = yearMonth };
+            db.Settings.Add(setting);
+        }
+        else
+        {
+            setting.Value = yearMonth;
+        }
     }
 }

@@ -1,4 +1,5 @@
 using FinTrack.Api.Data;
+using Microsoft.Extensions.Hosting;
 
 namespace FinTrack.Api.Services;
 
@@ -22,8 +23,11 @@ public class AutoReceiveService : BackgroundService
             {
                 using var scope = _services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var changed = IncomeSchedule.ProcessDueAutoReceives(db, DateOnly.FromDateTime(DateTime.Now));
-                if (changed) _logger.LogInformation("Applied due auto-receives to the balance.");
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                var changedReceive = IncomeSchedule.ProcessDueAutoReceives(db, today);
+                var changedReserved = await IncomeSchedule.ProcessReservedPaymentsAsync(db, today);
+                if (changedReceive) _logger.LogInformation("Applied due auto-receives to the balance.");
+                if (changedReserved) _logger.LogInformation("Applied reserved monthly payments to the balance.");
             }
             catch (Exception ex)
             {

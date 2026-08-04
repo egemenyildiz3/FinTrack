@@ -7,6 +7,16 @@ import { TrashIcon } from "../components/icons.jsx";
 
 const NUMERIC_KEYS = new Set(["amount", "dayOfMonth", "month"]);
 
+function normalizeNumberInput(value) {
+  const normalized = value.replace(/,/g, ".").trim();
+  if (normalized === "") return "";
+  if (!/^[0-9]*\.?[0-9]*$/.test(normalized)) return normalized;
+  if (/^0+[1-9]\d*$/.test(normalized)) {
+    return normalized.replace(/^0+/, "");
+  }
+  return normalized;
+}
+
 // Returns rows sorted by the given column, or the original order when no sort is active.
 function sortRows(rows, sort) {
   if (!sort.key) return rows;
@@ -208,22 +218,32 @@ function PaymentTable({ title, rows, yearly, banks, categories, onSave, onDelete
 }
 
 function PaymentRow({ row, yearly, categories, excluded, onSave, onDelete }) {
-  const [draft, setDraft] = useState(row);
+  const [draft, setDraft] = useState({ ...row, amount: String(row.amount) });
   const [saving, setSaving] = useState(false);
 
   // Keep local draft in sync if the row changes after a reload.
-  useEffect(() => setDraft(row), [row]);
+  useEffect(
+    () => setDraft({ ...row, amount: String(row.amount) }),
+    [row]
+  );
 
-  const dirty = JSON.stringify(draft) !== JSON.stringify(row);
+  const normalizedRow = { ...row, amount: String(row.amount) };
+  const dirty = JSON.stringify(draft) !== JSON.stringify(normalizedRow);
 
   function set(field, value) {
-    setDraft((d) => ({ ...d, [field]: value }));
+    setDraft((d) => ({
+      ...d,
+      [field]: field === "amount" ? normalizeNumberInput(value) : value,
+    }));
   }
 
   async function handleSave() {
     setSaving(true);
     try {
-      await onSave(draft);
+      await onSave({
+        ...draft,
+        amount: parseFloat(draft.amount) || 0,
+      });
     } finally {
       setSaving(false);
     }
@@ -256,7 +276,7 @@ function PaymentRow({ row, yearly, categories, excluded, onSave, onDelete }) {
           step="0.01"
           className="w-sm right"
           value={draft.amount}
-          onChange={(e) => set("amount", parseFloat(e.target.value) || 0)}
+          onChange={(e) => set("amount", e.target.value)}
         />
       </td>
       <td>

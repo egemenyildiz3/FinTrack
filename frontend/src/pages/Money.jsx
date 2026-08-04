@@ -12,6 +12,33 @@ export default function Money() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  function evaluateBalanceExpression(value) {
+    const cleaned = value.replace(/,/g, ".").replace(/\s+/g, "");
+    if (cleaned === "") return null;
+    if (!/^[0-9+\-/*.()]+$/.test(cleaned)) return null;
+    try {
+      // Safe-ish evaluation: only digits, operators, parentheses and decimal points.
+      const result = Function(`"use strict"; return (${cleaned})`)();
+      if (typeof result !== "number" || !Number.isFinite(result)) return null;
+      return parseFloat(result.toFixed(2));
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizeBalance(value) {
+    const withoutWhitespace = value.replace(/\s+/g, "");
+    return withoutWhitespace.replace(/,/g, ".");
+  }
+
+  function parseBalance(value) {
+    const cleaned = normalizeBalance(value).replace(/^=/, "");
+    const evaluated = evaluateBalanceExpression(cleaned);
+    if (evaluated !== null) return evaluated;
+    const numeric = parseFloat(cleaned);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+
   async function load() {
     try {
       const [s, b] = await Promise.all([
@@ -34,9 +61,14 @@ export default function Money() {
   }, []);
 
   async function saveBalance() {
-    await api.setSetting("TotalOwnedMoney", balance);
-    setSavedBalance(balance);
+    const parsed = parseBalance(balance);
+    await api.setSetting("TotalOwnedMoney", String(parsed));
+    setBalance(String(parsed));
+    setSavedBalance(String(parsed));
   }
+
+  const evaluatedBalance = parseBalance(balance);
+  const displayBalance = Number.isFinite(evaluatedBalance) ? String(evaluatedBalance) : balance;
 
   async function addSalary() {
     await api.createSalary({ name: "Extra income", amount: 0, currency: "EUR" });
@@ -88,18 +120,17 @@ export default function Money() {
         </p>
         <div className="balance-editor">
           <input
-            type="number"
-            step="0.01"
+            type="text"
             className="balance-input"
             value={balance}
-            onChange={(e) => setBalance(e.target.value)}
+            onChange={(e) => setBalance(normalizeBalance(e.target.value))}
           />
           <span className="cur">EUR</span>
           <button className="btn" disabled={balance === savedBalance} onClick={saveBalance}>
             Save
           </button>
         </div>
-        <div className="balance-display">{formatMoney(savedBalance, "EUR")}</div>
+        <div className="balance-display">{formatMoney(displayBalance, "EUR")}</div>
       </section>
 
       <section className="card">
